@@ -6,6 +6,7 @@ import { useAuthStore } from './store/useStore';
 import { Layout } from './components/layout/Layout';
 import LandingPage from './pages/LandingPage';
 import Login from './pages/auth/Login';
+import Register from './pages/auth/Register';
 import Dashboard from './pages/dashboard/Dashboard';
 import Wallet from './pages/wallet/Wallet';
 import CinBank from './pages/bank/CinBank';
@@ -17,8 +18,17 @@ import CompanySetup from './pages/companies/CompanySetup';
 // Feature: CinPlace
 import { CinPlaceListPage } from './features/cinplace/pages/CinPlaceListPage';
 import { CinPlaceProductPage } from './features/cinplace/pages/CinPlaceProductPage';
+import { CinPlaceSellerPage } from './features/cinplace/pages/CinPlaceSellerPage'; // Nova página
 import { CinPlaceCompanyProductsPage } from './features/cinplace/pages/CinPlaceCompanyProductsPage';
 import { CinPlaceNegotiationsPage } from './features/cinplace/pages/CinPlaceNegotiationsPage';
+
+// Admin Pages
+import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminCompanies from './pages/admin/AdminCompanies';
+import AdminExchange from './pages/admin/AdminExchange';
+import AdminCinBankWL from './pages/admin/AdminCinBankWL';
+import AdminUsers from './pages/admin/AdminUsers';
+import AdminCommissions from './pages/admin/AdminCommissions';
 
 // React Query Client
 const queryClient = new QueryClient();
@@ -30,6 +40,15 @@ const ProtectedRoute = () => {
     return <Navigate to="/login" replace />;
   }
   return <Layout><Outlet /></Layout>;
+};
+
+// Admin Route Guard
+const AdminRoute = () => {
+  const user = useAuthStore((state) => state.user);
+  if (!user || user.role !== 'admin') {
+      return <Navigate to="/app/dashboard" replace />;
+  }
+  return <Outlet />;
 };
 
 const App: React.FC = () => {
@@ -51,8 +70,9 @@ const App: React.FC = () => {
           {/* Public Routes */}
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
           
-          {/* Protected Routes */}
+          {/* Protected App Routes */}
           <Route path="/app" element={<ProtectedRoute />}>
             <Route index element={<Navigate to="/app/dashboard" replace />} />
             <Route path="dashboard" element={<Dashboard />} />
@@ -61,6 +81,7 @@ const App: React.FC = () => {
             {/* CinPlace Routes */}
             <Route path="cinplace" element={<CinPlaceListPage />} />
             <Route path="cinplace/:id" element={<CinPlaceProductPage />} />
+            <Route path="cinplace/seller/:sellerId" element={<CinPlaceSellerPage />} /> {/* Nova Rota */}
             
             <Route path="cinbank" element={<CinBank />} />
             <Route path="exchange" element={<Exchange />} />
@@ -72,7 +93,15 @@ const App: React.FC = () => {
             <Route path="companies/cinplace/products" element={<CinPlaceCompanyProductsPage />} />
             <Route path="companies/cinplace/negotiations" element={<CinPlaceNegotiationsPage />} />
             
-            <Route path="admin" element={<div className="p-8 text-center text-muted-foreground">Módulo Admin (Em Breve)</div>} />
+            {/* Admin Routes */}
+            <Route path="admin" element={<AdminRoute />}>
+                <Route index element={<AdminDashboard />} />
+                <Route path="companies" element={<AdminCompanies />} />
+                <Route path="exchange" element={<AdminExchange />} />
+                <Route path="cinbank-wl" element={<AdminCinBankWL />} />
+                <Route path="users" element={<AdminUsers />} />
+                <Route path="commissions" element={<AdminCommissions />} />
+            </Route>
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />

@@ -51,10 +51,12 @@ export interface AuthState {
   toggleTheme: () => void;
 }
 
+export type CompanyStatus = 'ACTIVE' | 'PENDING_VALIDATION' | 'REJECTED';
+
 export interface Company {
-  id: number;
+  id: number | string;
   name: string;
-  category: "Alimentos" | "Bebidas" | "Eletrônicos" | "Serviços" | "Imóveis" | "Varejo";
+  category: string;
   latitude: number;
   longitude: number;
   percentCincoin: number;
@@ -66,6 +68,14 @@ export interface Company {
   image: string;
   rating: number;
   totalReviews: number;
+  status?: CompanyStatus;
+  
+  // Admin fields
+  cnpj?: string;
+  cnpjCardUrl?: string;
+  documentPhotoUrl?: string;
+  ownerName?: string;
+  requestDate?: string;
 }
 
 export interface SellOrder {
@@ -83,4 +93,21 @@ export interface Referral {
   name: string;
   date: string;
   status: 'verified' | 'pending'; // verificado = conta validada (gera bonus)
+}
+
+export interface Commission {
+  id: string;
+  referrerName: string; // Quem indicou
+  refereeName: string;  // Quem entrou/comprou
+  type: 'SIGNUP_BONUS' | 'PURCHASE_COMMISSION';
+  amount: number;
+  baseValue?: number; // Valor da compra original (se aplicável)
+  percentage?: number; // % da comissão aplicada
+  date: string;
+  status: 'PAID' | 'PENDING';
+}
+
+export interface SystemFees {
+  transferFeePercent: number;
+  withdrawalFeePercent: number;
 }

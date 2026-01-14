@@ -2,14 +2,16 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../services/api';
+import { useAuthStore } from '../../store/useStore';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
-import { ArrowLeftRight, Clock, ShieldCheck, AlertCircle } from 'lucide-react';
+import { ArrowLeftRight, Clock, ShieldCheck, AlertCircle, AlertTriangle, UserX } from 'lucide-react';
 import { formatCurrency } from '../../lib/utils';
 import { SellOrder } from '../../types';
 
 const Exchange = () => {
+  const { user } = useAuthStore();
   const queryClient = useQueryClient();
   const [amount, setAmount] = useState('');
   const [activeTab, setActiveTab] = useState<'buy' | 'sell'>('buy');
@@ -19,10 +21,8 @@ const Exchange = () => {
     queryFn: api.exchange.getAdminPrice 
   });
 
-  const { data: sellQueue } = useQuery({
-    queryKey: ['sellQueue'],
-    queryFn: api.exchange.getSellQueue
-  });
+  const { data: fees } = useQuery({ queryKey: ['fees'], queryFn: api.exchange.getFees });
+  const { data: sellQueue } = useQuery({ queryKey: ['sellQueue'], queryFn: api.exchange.getSellQueue });
 
   const buyMutation = useMutation({
     mutationFn: api.exchange.buyToken,
@@ -39,6 +39,9 @@ const Exchange = () => {
       alert("Ordem de venda enviada para a fila de execução.");
       setAmount('');
       queryClient.invalidateQueries({ queryKey: ['sellQueue'] });
+    },
+    onError: (err) => {
+        alert(err.message);
     }
   });
 
@@ -48,12 +51,20 @@ const Exchange = () => {
     if (activeTab === 'buy') {
       buyMutation.mutate(Number(amount));
     } else {
+      // Client-side KYC pre-check
+      if (user?.kycStatus !== 'verified') {
+          alert("Atenção: Você precisa validar sua identidade (KYC) no perfil da carteira antes de realizar saques ou vendas.");
+          return;
+      }
       sellMutation.mutate(Number(amount));
     }
   };
 
   const adminPrice = priceData?.price || 0.50;
-  const totalValue = Number(amount) * adminPrice;
+  const rawTotal = Number(amount) * adminPrice;
+  const withdrawalFee = fees?.withdrawalFeePercent || 2.0; // Default fallback
+  const feeAmount = activeTab === 'sell' ? (rawTotal * (withdrawalFee / 100)) : 0;
+  const finalTotal = activeTab === 'sell' ? rawTotal - feeAmount : rawTotal;
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -92,7 +103,7 @@ const Exchange = () => {
                         className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${activeTab === 'sell' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground'}`}
                         onClick={() => setActiveTab('sell')}
                      >
-                         Vender
+                         Vender / Saque
                      </button>
                  </div>
                  <CardTitle>{activeTab === 'buy' ? 'Adquirir Cincoins' : 'Colocar à Venda'}</CardTitle>
@@ -103,6 +114,15 @@ const Exchange = () => {
                  </CardDescription>
              </CardHeader>
              <CardContent className="space-y-6">
+                 {activeTab === 'sell' && user?.kycStatus !== 'verified' && (
+                     <div className="bg-red-500/10 border border-red-500/20 p-3 rounded-lg flex items-start gap-3 text-sm text-red-600 dark:text-red-400">
+                         <UserX className="h-5 w-5 shrink-0" />
+                         <p>
+                             <strong>Ação Bloqueada:</strong> Para vender tokens e realizar saques, você precisa validar sua documentação (KYC) na aba "Perfil" da sua Carteira.
+                         </p>
+                     </div>
+                 )}
+
                  <div className="space-y-2">
                      <label className="text-sm font-medium">Quantidade (CNC)</label>
                      <Input 
@@ -111,6 +131,7 @@ const Exchange = () => {
                         value={amount}
                         onChange={(e) => setAmount(e.target.value)}
                         className="text-lg"
+                        disabled={activeTab === 'sell' && user?.kycStatus !== 'verified'}
                      />
                  </div>
 
@@ -120,12 +141,14 @@ const Exchange = () => {
                          <span className="font-mono">{formatCurrency(adminPrice, 'BRL')}</span>
                      </div>
                      <div className="flex justify-between text-sm">
-                         <span className="text-muted-foreground">Taxa</span>
-                         <span className="font-mono text-green-500">Grátis</span>
+                         <span className="text-muted-foreground">Taxa Administrativa {activeTab === 'sell' && `(${withdrawalFee}%)`}</span>
+                         <span className={`font-mono ${activeTab === 'buy' ? 'text-green-500' : 'text-red-500'}`}>
+                             {activeTab === 'buy' ? 'Grátis' : `- ${formatCurrency(feeAmount, 'BRL')}`}
+                         </span>
                      </div>
                      <div className="border-t border-border pt-2 flex justify-between font-bold text-lg">
-                         <span>Total {activeTab === 'buy' ? 'a Pagar' : 'a Receber'}</span>
-                         <span>{formatCurrency(totalValue, 'BRL')}</span>
+                         <span>Total {activeTab === 'buy' ? 'a Pagar' : 'a Receber Líquido'}</span>
+                         <span>{formatCurrency(finalTotal, 'BRL')}</span>
                      </div>
                  </div>
 
@@ -142,6 +165,7 @@ const Exchange = () => {
                     className={`w-full h-12 text-lg font-bold ${activeTab === 'buy' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}`}
                     onClick={handleAction}
                     isLoading={buyMutation.isPending || sellMutation.isPending}
+                    disabled={activeTab === 'sell' && user?.kycStatus !== 'verified'}
                  >
                      {activeTab === 'buy' ? 'Confirmar Compra' : 'Confirmar Venda'}
                  </Button>

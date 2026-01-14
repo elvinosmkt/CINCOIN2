@@ -6,7 +6,8 @@ export interface CinPlaceProduct {
   id: string;
   name: string;
   description: string;
-  priceFiat: number; // Total price in BRL
+  priceFiat: number; // Total price in BRL (Base price)
+  discountPercent?: number; // Discount offered (e.g., 10%)
   imageUrl: string;
   category: string;
   sellerId: string;
@@ -20,6 +21,20 @@ export interface CinPlaceProduct {
   
   allowNegotiation: boolean;
   createdAt: string;
+}
+
+export interface SellerProfile {
+  id: string;
+  name: string;
+  description: string;
+  address: string;
+  city: string;
+  state: string;
+  imageUrl: string;
+  latitude: number;
+  longitude: number;
+  rating: number;
+  joinedAt: string;
 }
 
 export interface CinPlaceNegotiation {

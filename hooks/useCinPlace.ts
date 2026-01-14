@@ -20,6 +20,21 @@ export const useCinPlaceProduct = (id: string) => {
   });
 };
 
+export const useAllSellers = () => {
+  return useQuery({
+    queryKey: ['all-sellers'],
+    queryFn: cinplaceService.getAllSellers,
+  });
+};
+
+export const useSellerProfile = (sellerId: string) => {
+  return useQuery({
+    queryKey: ['seller-profile', sellerId],
+    queryFn: () => cinplaceService.getSellerProfile(sellerId),
+    enabled: !!sellerId,
+  });
+};
+
 export const useCompanyProducts = (companyId: string) => {
   return useQuery({
     queryKey: ['company-products', companyId],

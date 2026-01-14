@@ -2,7 +2,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowRight, ShieldCheck, Globe2, Users2, Zap, Landmark, ShoppingBag, BarChart3, ChevronRight } from 'lucide-react';
+import { ArrowRight, ShieldCheck, Globe2, Users2, Zap, Landmark, ShoppingBag, BarChart3, ChevronRight, Store } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 
 const LandingPage = () => {
@@ -65,11 +65,11 @@ const LandingPage = () => {
             </p>
 
             <div className="flex flex-col md:flex-row gap-4 justify-center pt-4">
-              <Button size="lg" className="h-12 px-8 rounded-full text-lg shadow-xl shadow-primary/20 hover:scale-105 transition-transform" onClick={() => navigate('/login')}>
+              <Button size="lg" className="h-12 px-8 rounded-full text-lg shadow-xl shadow-primary/20 hover:scale-105 transition-transform" onClick={() => navigate('/register?type=user')}>
                 Criar Conta Grátis <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
-              <Button size="lg" variant="outline" className="h-12 px-8 rounded-full text-lg border-white/10 bg-white/5 backdrop-blur hover:bg-white/10">
-                Ler Whitepaper
+              <Button size="lg" variant="outline" className="h-12 px-8 rounded-full text-lg border-primary/30 text-primary bg-primary/5 hover:bg-primary/10" onClick={() => navigate('/register?type=partner')}>
+                <Store className="mr-2 h-5 w-5" /> Seja um Parceiro
               </Button>
             </div>
           </motion.div>
@@ -124,7 +124,7 @@ const LandingPage = () => {
                 <ShoppingBag className="h-24 w-24 text-primary" />
               </div>
               <div className="relative z-10">
-                <div className="h-12 w-12 rounded-xl bg-orange-500/20 text-orange-500 flex items-center justify-center mb-6">
+                <div className="h-12 w-12 rounded-xl bg-amber-500/20 text-amber-500 flex items-center justify-center mb-6">
                   <ShoppingBag className="h-6 w-6" />
                 </div>
                 <h3 className="text-2xl font-bold mb-3">CinPlace</h3>
@@ -132,9 +132,9 @@ const LandingPage = () => {
                   O primeiro marketplace híbrido. Compre produtos de grandes marcas pagando parte em Cincoin e parte em Fiat.
                 </p>
                 <ul className="space-y-2 mb-8 text-sm text-gray-400">
-                  <li className="flex items-center gap-2"><Zap className="h-4 w-4 text-orange-500" /> Split de Pagamento</li>
-                  <li className="flex items-center gap-2"><Zap className="h-4 w-4 text-orange-500" /> Cashback em CNC</li>
-                  <li className="flex items-center gap-2"><Zap className="h-4 w-4 text-orange-500" /> Vendedores Verificados</li>
+                  <li className="flex items-center gap-2"><Zap className="h-4 w-4 text-amber-500" /> Split de Pagamento</li>
+                  <li className="flex items-center gap-2"><Zap className="h-4 w-4 text-amber-500" /> Cashback em CNC</li>
+                  <li className="flex items-center gap-2"><Zap className="h-4 w-4 text-amber-500" /> Vendedores Verificados</li>
                 </ul>
                 <Button variant="outline" className="w-full group-hover:bg-primary group-hover:text-white transition-colors border-white/10">Acessar Loja</Button>
               </div>

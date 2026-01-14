@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -30,7 +31,12 @@ const Login = () => {
     mutationFn: (data: LoginFormValues) => api.auth.login(data.email, data.password),
     onSuccess: (user) => {
       loginToStore(user, 'fake-jwt-token');
-      navigate('/app/dashboard');
+      // Redirect based on role
+      if (user.role === 'admin') {
+          navigate('/app/admin');
+      } else {
+          navigate('/app/dashboard');
+      }
     },
     onError: (error: Error) => {
       console.error(error);
@@ -43,8 +49,13 @@ const Login = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-muted/30 px-4">
-      <Card className="w-full max-w-md animate-in fade-in zoom-in duration-300">
+      <Card className="w-full max-w-md animate-in fade-in zoom-in duration-300 shadow-2xl border-primary/10">
         <CardHeader className="space-y-1">
+          <div className="flex justify-center mb-4">
+            <div className="h-12 w-12 rounded-xl bg-gradient-to-tr from-primary to-amber-500 flex items-center justify-center font-bold text-white text-xl shadow-lg shadow-primary/20">
+              C
+            </div>
+          </div>
           <CardTitle className="text-2xl font-bold text-center">Bem-vindo de volta</CardTitle>
           <CardDescription className="text-center">Digite seu e-mail para acessar sua conta</CardDescription>
         </CardHeader>
@@ -70,17 +81,18 @@ const Login = () => {
               </div>
             )}
 
-            <Button type="submit" className="w-full" isLoading={mutation.isPending}>
+            <Button type="submit" className="w-full h-11 text-lg" isLoading={mutation.isPending}>
               Entrar
             </Button>
           </form>
         </CardContent>
-        <CardFooter className="flex flex-col space-y-2">
+        <CardFooter className="flex flex-col space-y-4">
           <div className="text-sm text-muted-foreground text-center">
-            Não tem uma conta? <span className="text-primary cursor-pointer hover:underline">Cadastre-se</span>
+            Não tem uma conta? <button onClick={() => navigate('/register')} className="text-primary font-bold hover:underline">Cadastre-se</button>
           </div>
-          <div className="text-xs text-muted-foreground text-center">
-            (Demo: use qualquer e-mail, senha > 6 caracteres)
+          <div className="text-xs text-muted-foreground text-center bg-muted p-2 rounded">
+            <div>Usuário: qualquer email / senha 6+ chars</div>
+            <div className="font-bold text-primary mt-1">Admin: admin@cincoin.asia / 123456</div>
           </div>
         </CardFooter>
       </Card>

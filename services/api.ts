@@ -1,5 +1,6 @@
 
-import { User, Transaction, Product, BankAsset, SellOrder, Referral } from '../types';
+import { User, Transaction, Product, BankAsset, SellOrder, Referral, Company, Commission, SystemFees } from '../types';
+import { COMPANIES } from '../data/companies';
 
 // Utils
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -12,9 +13,70 @@ const MOCK_USER: User = {
   role: 'user', 
   balance: 25420.50,
   fiatBalance: 1500.00,
-  pendingBonus: 250.00, // 5 convites pendentes x 50 (exemplo)
-  kycStatus: 'verified',
+  pendingBonus: 250.00,
+  kycStatus: 'unverified', // Default unverified to test logic, verify in Profile
 };
+
+const MOCK_ADMIN: User = {
+  id: 'admin_001',
+  name: 'Administrador Geral',
+  email: 'admin@cincoin.asia',
+  role: 'admin',
+  balance: 100000000, // Supply Control Wallet
+  fiatBalance: 0,
+  pendingBonus: 0,
+  kycStatus: 'verified'
+};
+
+const MOCK_ALL_USERS: User[] = [
+    MOCK_USER,
+    { id: 'u_2', name: 'Maria Silva', email: 'maria@email.com', role: 'user', balance: 5000, fiatBalance: 0, pendingBonus: 0, kycStatus: 'pending' },
+    { id: 'u_3', name: 'João Souza', email: 'joao@email.com', role: 'user', balance: 1200, fiatBalance: 500, pendingBonus: 50, kycStatus: 'verified' },
+    { id: 'u_4', name: 'Roberto Carlos', email: 'roberto@email.com', role: 'user', balance: 0, fiatBalance: 0, pendingBonus: 0, kycStatus: 'unverified' },
+    { id: 'u_5', name: 'Empresa Teste', email: 'loja@empresa.com', role: 'company', balance: 50000, fiatBalance: 10000, pendingBonus: 0, kycStatus: 'verified' },
+];
+
+const MOCK_COMMISSIONS: Commission[] = [
+    { id: 'c_1', referrerName: 'Alex Investidor', refereeName: 'João Souza', type: 'SIGNUP_BONUS', amount: 50, date: '2023-10-24', status: 'PAID' },
+    { id: 'c_2', referrerName: 'Alex Investidor', refereeName: 'Maria Silva', type: 'PURCHASE_COMMISSION', amount: 15.50, baseValue: 310, percentage: 5, date: '2023-10-25', status: 'PAID' },
+    { id: 'c_3', referrerName: 'Pedro Santos', refereeName: 'Lucas Lima', type: 'SIGNUP_BONUS', amount: 50, date: '2023-10-26', status: 'PENDING' },
+    { id: 'c_4', referrerName: 'Maria Silva', refereeName: 'Ana Clara', type: 'PURCHASE_COMMISSION', amount: 120.00, baseValue: 2400, percentage: 5, date: '2023-10-26', status: 'PAID' },
+];
+
+// Mock Fees
+let MOCK_FEES: SystemFees = {
+    transferFeePercent: 1.5,
+    withdrawalFeePercent: 2.0
+};
+
+// Pending Companies Mock
+let PENDING_COMPANIES: Company[] = [
+    {
+        id: 'req_1',
+        name: 'Padaria do João',
+        category: 'Alimentos',
+        address: 'Rua das Flores, 123',
+        city: 'Itajaí',
+        state: 'SC',
+        phone: '(47) 9999-8888',
+        image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&q=80&w=400',
+        latitude: -26.90,
+        longitude: -48.66,
+        percentCincoin: 50,
+        percentBRL: 50,
+        rating: 0,
+        totalReviews: 0,
+        status: 'PENDING_VALIDATION',
+        cnpj: '12.345.678/0001-90',
+        cnpjCardUrl: 'https://www.gov.br/receitafederal/pt-br/assuntos/orientacao-tributaria/cadastros/cnpj/comprovante-de-inscricao-e-de-situacao-cadastral/@@images/image', // Mock PDF/Image
+        documentPhotoUrl: 'https://s2.glbimg.com/O7qNqS7i95r_Xg_JgQJgQJgQJg=/0x0:695x390/984x0/smart/filters:strip_icc()/i.s3.glbimg.com/v1/AUTH_59edd422c0c84a879bd37670ae4f538a/internal_photos/bs/2019/B/w/tNqNqS7i95r_Xg_JgQJg/rg-novo.jpg', // Mock ID
+        ownerName: 'João Silva',
+        requestDate: new Date().toISOString()
+    }
+];
+
+// Token Price Mock (Stateful for session)
+let TOKEN_PRICE = 0.50;
 
 // Produtos com lógica de split (Híbrido)
 const MOCK_PRODUCTS: Product[] = [
@@ -69,9 +131,10 @@ const MOCK_BANK_ASSETS: BankAsset[] = [
   { id: 'a_2', name: 'Consórcio Auto (Grupo 504)', type: 'consortium', balance: 12500.00, profitability: 'N/A', status: 'active' },
 ];
 
-const MOCK_SELL_QUEUE: SellOrder[] = [
-  { id: 'so_1', amount: 500, price: 0.50, totalBrl: 250, date: '2023-10-25', status: 'waiting', positionInQueue: 145 },
-  { id: 'so_2', amount: 1000, price: 0.50, totalBrl: 500, date: '2023-10-20', status: 'processing', positionInQueue: 5 },
+let MOCK_SELL_QUEUE: SellOrder[] = [
+  { id: 'so_1', amount: 500, price: 0.50, totalBrl: 250, date: '2023-10-25', status: 'waiting', positionInQueue: 1 },
+  { id: 'so_2', amount: 1000, price: 0.50, totalBrl: 500, date: '2023-10-20', status: 'processing', positionInQueue: 2 },
+  { id: 'so_3', amount: 20000, price: 0.50, totalBrl: 10000, date: '2023-10-26', status: 'waiting', positionInQueue: 3 },
 ];
 
 const MOCK_REFERRALS: Referral[] = [
@@ -85,6 +148,12 @@ export const api = {
     login: async (email: string, password: string): Promise<User> => {
       await delay(1000);
       if (email === 'error@teste.com') throw new Error('Credenciais inválidas');
+      
+      // Admin Login Check
+      if (email === 'admin@cincoin.asia' && password === '123456') {
+          return MOCK_ADMIN;
+      }
+
       return MOCK_USER;
     },
     register: async (data: any): Promise<User> => {
@@ -96,6 +165,15 @@ export const api = {
     getProfile: async (): Promise<User> => {
       await delay(500);
       return MOCK_USER;
+    },
+    updateProfile: async (data: Partial<User>): Promise<User> => {
+       await delay(800);
+       Object.assign(MOCK_USER, data);
+       return MOCK_USER;
+    },
+    requestKyc: async (docs: any): Promise<void> => {
+       await delay(1500);
+       MOCK_USER.kycStatus = 'pending';
     },
     getTransactions: async (): Promise<Transaction[]> => {
       await delay(800);
@@ -152,14 +230,17 @@ export const api = {
     }
   },
   exchange: {
-    // Nova lógica de preço fixo
     getAdminPrice: async () => {
       await delay(200);
       return {
-        price: 0.50, // Preço fixo estabelecido pelo Admin
+        price: TOKEN_PRICE, 
         currency: 'BRL',
         lastUpdate: new Date().toISOString()
       };
+    },
+    getFees: async (): Promise<SystemFees> => {
+        await delay(300);
+        return MOCK_FEES;
     },
     buyToken: async (amountCnc: number) => {
       await delay(1500);
@@ -167,7 +248,10 @@ export const api = {
     },
     sellToken: async (amountCnc: number) => {
       await delay(1500);
-      // Entra na fila
+      // Ensure KYC in backend logic simulation
+      if (MOCK_USER.kycStatus !== 'verified') {
+          throw new Error("KYC required for selling tokens");
+      }
       return { success: true, queuePosition: 152 };
     },
     getSellQueue: async (): Promise<SellOrder[]> => {
@@ -189,6 +273,56 @@ export const api = {
            { name: 'Marketing', value: 10, color: '#8b5cf6' },
         ]
       };
+    }
+  },
+  // --- ADMIN API ---
+  admin: {
+    getStats: async () => {
+        await delay(500);
+        return {
+            totalUsers: 14205,
+            pendingValidations: PENDING_COMPANIES.length,
+            volume24h: 2500000,
+            tokenPrice: TOKEN_PRICE,
+            sellQueueSize: MOCK_SELL_QUEUE.length
+        }
+    },
+    getPendingCompanies: async (): Promise<Company[]> => {
+        await delay(600);
+        return PENDING_COMPANIES;
+    },
+    approveCompany: async (id: string) => {
+        await delay(1000);
+        PENDING_COMPANIES = PENDING_COMPANIES.filter(c => c.id !== id);
+        return { success: true };
+    },
+    rejectCompany: async (id: string) => {
+        await delay(800);
+        PENDING_COMPANIES = PENDING_COMPANIES.filter(c => c.id !== id);
+        return { success: true };
+    },
+    setTokenPrice: async (price: number) => {
+        await delay(500);
+        TOKEN_PRICE = price;
+        return { success: true, newPrice: price };
+    },
+    updateFees: async (fees: SystemFees) => {
+        await delay(500);
+        MOCK_FEES = fees;
+        return { success: true };
+    },
+    getUsers: async (): Promise<User[]> => {
+        await delay(800);
+        return MOCK_ALL_USERS;
+    },
+    processSellOrder: async (orderId: string) => {
+        await delay(1000);
+        MOCK_SELL_QUEUE = MOCK_SELL_QUEUE.filter(o => o.id !== orderId);
+        return { success: true };
+    },
+    getCommissions: async (): Promise<Commission[]> => {
+        await delay(700);
+        return MOCK_COMMISSIONS;
     }
   }
 };

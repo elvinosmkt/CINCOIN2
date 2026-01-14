@@ -1,9 +1,52 @@
 
-import { CinPlaceProduct, CinPlaceNegotiation, CinPlaceOrder } from '../types/cinplace';
+import { CinPlaceProduct, CinPlaceNegotiation, CinPlaceOrder, SellerProfile } from '../types/cinplace';
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-// --- MOCK DATA ---
+// --- MOCK SELLERS ---
+const SELLERS: SellerProfile[] = [
+  {
+    id: 'c_1',
+    name: 'TechStore Premium',
+    description: 'Somos referência em produtos Apple e eletrônicos de alta performance no litoral catarinense. Oferecemos garantia mundial e suporte especializado.',
+    address: 'Av. Brasil, 500 - Centro',
+    city: 'Balneário Camboriú',
+    state: 'SC',
+    imageUrl: 'https://images.unsplash.com/photo-1531297461136-82lw8a2d2?auto=format&fit=crop&q=80&w=400',
+    latitude: -26.9890,
+    longitude: -48.6360,
+    rating: 4.8,
+    joinedAt: '2023-01-15'
+  },
+  {
+    id: 'c_2',
+    name: 'Agência Grow',
+    description: 'A Agência Grow é especializada em serviços de informática, marketing digital e desenvolvimento web na cidade de Balneário Camboriú. Com serviços de consultoria estratégica, tráfego pago e branding.',
+    address: 'Rua 1500, Sala 402 - Centro',
+    city: 'Balneário Camboriú',
+    state: 'SC',
+    imageUrl: 'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=400',
+    latitude: -26.9920,
+    longitude: -48.6340,
+    rating: 5.0,
+    joinedAt: '2023-03-10'
+  },
+  {
+    id: 'c_4',
+    name: 'Café do Vale',
+    description: 'Cafés especiais selecionados diretamente do produtor.',
+    address: 'Rua 3300, 45',
+    city: 'Balneário Camboriú',
+    state: 'SC',
+    imageUrl: 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&q=80&w=400',
+    latitude: -27.0010,
+    longitude: -48.6250,
+    rating: 4.5,
+    joinedAt: '2023-06-20'
+  }
+];
+
+// --- MOCK PRODUCTS ---
 let PRODUCTS: CinPlaceProduct[] = [
   {
     id: 'p_1',
@@ -21,9 +64,10 @@ let PRODUCTS: CinPlaceProduct[] = [
   },
   {
     id: 'p_2',
-    name: 'Consultoria de Marketing',
-    description: 'Pacote de 10 horas de consultoria estratégica para seu negócio.',
+    name: 'Consultoria de Marketing (Pacote)',
+    description: 'Pacote de 10 horas de consultoria estratégica para seu negócio alavancar vendas online.',
     priceFiat: 5000,
+    discountPercent: 10, // 10% de desconto
     imageUrl: 'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&q=80&w=1000',
     category: 'Serviços',
     sellerId: 'c_2',
@@ -35,18 +79,18 @@ let PRODUCTS: CinPlaceProduct[] = [
     createdAt: new Date().toISOString()
   },
   {
-    id: 'p_3',
-    name: 'Apartamento Balneário',
-    description: 'Entrada facilitada com Cincoin. Vista para o mar.',
-    priceFiat: 850000,
-    imageUrl: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&q=80&w=1000',
-    category: 'Imóveis',
-    sellerId: 'c_3',
-    sellerName: 'Ocean Realty',
-    acceptType: 'RANGE',
-    minCinPercent: 10,
-    maxCinPercent: 40,
-    allowNegotiation: true,
+    id: 'p_2_b',
+    name: 'Manutenção de Computadores',
+    description: 'Formatação, limpeza e upgrade de hardware. Serviço realizado em laboratório próprio.',
+    priceFiat: 350,
+    discountPercent: 5,
+    imageUrl: 'https://images.unsplash.com/photo-1597872250977-13c9593c961e?auto=format&fit=crop&q=80&w=1000',
+    category: 'Serviços',
+    sellerId: 'c_2',
+    sellerName: 'Agência Grow',
+    acceptType: 'FIXED',
+    fixedCinPercent: 100,
+    allowNegotiation: false,
     createdAt: new Date().toISOString()
   },
   {
@@ -82,6 +126,34 @@ let NEGOTIATIONS: CinPlaceNegotiation[] = [
 let ORDERS: CinPlaceOrder[] = [];
 
 export const cinplaceService = {
+  // --- SELLERS ---
+  getAllSellers: async (): Promise<SellerProfile[]> => {
+    await delay(600);
+    return SELLERS;
+  },
+
+  getSellerProfile: async (sellerId: string): Promise<SellerProfile | undefined> => {
+    await delay(500);
+    // Tenta buscar nos mocks, ou retorna um genérico baseado no ID se não existir
+    const seller = SELLERS.find(s => s.id === sellerId);
+    if (seller) return seller;
+    
+    // Fallback generico para IDs desconhecidos (ex: user logado criando empresa agora)
+    return {
+        id: sellerId,
+        name: 'Vendedor Parceiro',
+        description: 'Empresa parceira verificada Cincoin.',
+        address: 'Endereço não informado',
+        city: 'Cidade',
+        state: 'UF',
+        imageUrl: 'https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&q=80&w=400',
+        latitude: -23.5505,
+        longitude: -46.6333,
+        rating: 4.0,
+        joinedAt: new Date().toISOString()
+    };
+  },
+
   // --- PRODUCTS ---
   getProducts: async (): Promise<CinPlaceProduct[]> => {
     await delay(600);
@@ -95,10 +167,7 @@ export const cinplaceService = {
 
   getCompanyProducts: async (companyId: string): Promise<CinPlaceProduct[]> => {
     await delay(500);
-    // Simulating that the logged user owns some products for demo purposes
-    // In a real app, we filter by sellerId === companyId
-    // For demo: return all if companyId matches or a subset
-    return PRODUCTS; 
+    return PRODUCTS.filter(p => p.sellerId === companyId); 
   },
 
   createProduct: async (product: Omit<CinPlaceProduct, 'id' | 'createdAt'>): Promise<CinPlaceProduct> => {

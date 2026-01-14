@@ -17,7 +17,12 @@ import {
   MapPin,
   Settings,
   Package,
-  MessageSquareText
+  MessageSquareText,
+  ShieldAlert,
+  Users,
+  Building2,
+  Cpu,
+  Gift
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { Button } from '../ui/Button';
@@ -36,7 +41,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     navigate('/login');
   };
 
-  const navItems = [
+  // User Navigation
+  const userNavItems = [
     { label: 'Visão Geral', icon: LayoutDashboard, href: '/app/dashboard' },
     { label: 'Carteira', icon: Wallet, href: '/app/wallet' },
     { label: 'CinExchange', icon: ArrowRightLeft, href: '/app/exchange' },
@@ -51,6 +57,18 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
      { label: 'Meus Produtos', icon: Package, href: '/app/companies/cinplace/products' },
      { label: 'Negociações', icon: MessageSquareText, href: '/app/companies/cinplace/negotiations' },
   ];
+
+  // Admin Navigation
+  const adminNavItems = [
+    { label: 'Admin Dashboard', icon: LayoutDashboard, href: '/app/admin' },
+    { label: 'Validar Parceiros', icon: Building2, href: '/app/admin/companies' },
+    { label: 'Gestão Exchange', icon: ArrowRightLeft, href: '/app/admin/exchange' },
+    { label: 'Usuários', icon: Users, href: '/app/admin/users' },
+    { label: 'Comissões & Afiliados', icon: Gift, href: '/app/admin/commissions' },
+    { label: 'CinBank WL', icon: Cpu, href: '/app/admin/cinbank-wl' }, // White Label
+  ];
+
+  const navItems = user?.role === 'admin' ? adminNavItems : userNavItems;
 
   return (
     <div className="flex h-screen bg-background text-foreground overflow-hidden">
@@ -75,12 +93,14 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       )}>
         <div className="flex h-20 items-center px-6 border-b border-border/40">
           <div className="flex items-center gap-3">
-            <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-primary to-orange-600 text-white font-bold shadow-lg shadow-primary/20">
+            <div className={`relative flex h-10 w-10 items-center justify-center rounded-xl font-bold text-white shadow-lg ${user?.role === 'admin' ? 'bg-red-600 shadow-red-500/20' : 'bg-gradient-to-tr from-primary to-amber-500 shadow-primary/20'}`}>
               <span className="text-xl">C</span>
             </div>
             <div className="flex flex-col">
                <span className="text-lg font-bold tracking-tight">Cincoin</span>
-               <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold">Platform</span>
+               <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold">
+                  {user?.role === 'admin' ? 'Admin Panel' : 'Platform'}
+               </span>
             </div>
           </div>
           <button onClick={() => setSidebarOpen(false)} className="md:hidden ml-auto">
@@ -95,7 +115,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <NavLink
                   key={item.href}
                   to={item.href}
-                  end={item.href === '/app/dashboard'} // Exact match only for dashboard
+                  end={item.href === '/app/admin' || item.href === '/app/dashboard'}
                   onClick={() => setSidebarOpen(false)}
                   className={({ isActive }) => cn(
                     "group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200",
@@ -110,34 +130,46 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               ))}
             </nav>
 
-            <div className="pt-2 border-t border-border/30">
-               <span className="px-3 text-xs font-semibold text-muted-foreground mb-2 block uppercase">Área do Parceiro</span>
-               <nav className="space-y-1.5">
-                 {businessItems.map((item) => (
-                    <NavLink
-                      key={item.href}
-                      to={item.href}
-                      onClick={() => setSidebarOpen(false)}
-                      className={({ isActive }) => cn(
-                        "group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200",
-                        isActive 
-                          ? "bg-accent text-accent-foreground border border-border" 
-                          : "text-muted-foreground hover:bg-accent hover:text-foreground"
-                      )}
-                    >
-                      <item.icon className="h-4 w-4 transition-transform group-hover:scale-110" />
-                      {item.label}
-                    </NavLink>
-                  ))}
-               </nav>
-            </div>
+            {user?.role !== 'admin' && (
+                <div className="pt-2 border-t border-border/30">
+                <span className="px-3 text-xs font-semibold text-muted-foreground mb-2 block uppercase">Área do Parceiro</span>
+                <nav className="space-y-1.5">
+                    {businessItems.map((item) => (
+                        <NavLink
+                        key={item.href}
+                        to={item.href}
+                        onClick={() => setSidebarOpen(false)}
+                        className={({ isActive }) => cn(
+                            "group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200",
+                            isActive 
+                            ? "bg-accent text-accent-foreground border border-border" 
+                            : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                        )}
+                        >
+                        <item.icon className="h-4 w-4 transition-transform group-hover:scale-110" />
+                        {item.label}
+                        </NavLink>
+                    ))}
+                </nav>
+                </div>
+            )}
           </div>
 
           <div className="space-y-4 mt-6">
-            <div className="rounded-xl bg-gradient-to-br from-slate-900 to-slate-800 p-4 text-white shadow-inner border border-white/5">
-                <p className="text-xs text-slate-400 mb-1">Saldo Estimado</p>
-                <p className="text-lg font-bold">R$ {user?.balance ? (user.balance * 0.50).toLocaleString('pt-BR') : '0,00'}</p>
-            </div>
+            {user?.role === 'admin' ? (
+                 <div className="rounded-xl bg-red-950/30 p-4 text-red-200 border border-red-500/20">
+                    <div className="flex items-center gap-2 mb-1">
+                        <ShieldAlert className="h-4 w-4" />
+                        <span className="text-xs font-bold uppercase">Acesso Admin</span>
+                    </div>
+                    <p className="text-xs opacity-70">Privilégios elevados ativos.</p>
+                </div>
+            ) : (
+                <div className="rounded-xl bg-gradient-to-br from-slate-900 to-slate-800 p-4 text-white shadow-inner border border-white/5">
+                    <p className="text-xs text-slate-400 mb-1">Saldo Estimado</p>
+                    <p className="text-lg font-bold">R$ {user?.balance ? (user.balance * 0.50).toLocaleString('pt-BR') : '0,00'}</p>
+                </div>
+            )}
 
             <div className="border-t border-border/40 pt-4">
               <div className="flex items-center justify-between px-2 mb-3">
